@@ -14,3 +14,4 @@ class MaterialEntryView extends StatelessWidget {
     );
   }
 }
+

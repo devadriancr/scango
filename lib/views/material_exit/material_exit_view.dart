@@ -30,7 +30,7 @@ class MaterialExitView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Linea de Produccion',
+                        'Línea de Producción',
                         style: TextStyle(fontSize: 18),
                       ),
                       Icon(Icons.construction_outlined, size: 30),

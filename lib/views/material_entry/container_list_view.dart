@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:scango/controllers/container/container_controller.dart';
 import 'package:scango/models/container/container.dart';
+import 'package:scango/views/material_entry/scanned_material_view.dart';
 // import 'scanned_material_view.dart';
 
 class ContainerListView extends StatefulWidget {
@@ -80,33 +81,43 @@ class _ContainerListViewState extends State<ContainerListView> {
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 16.0), // Separación interna
+                        horizontal: 8.0, vertical: 8.0), // Separación interna
                     title: Text(
                       '${container.code}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16.0,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    subtitle: Text(
-                      'Fecha: ${_formatDate(container.arrivalDate)} - Hora: ${_formatTime(container.arrivalTime)}',
-                      style: TextStyle(color: Colors.grey[700], fontSize: 14.0),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16.0,
-                      // color: Colors.blueAccent,
-                    ),
+                    subtitle: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Fecha: ${_formatDate(container.arrivalDate)}',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 12.0,
+                            ),
+                          ),
+                          Text(
+                            'Hora: ${_formatTime(container.arrivalTime)}',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 12.0,
+                            ),
+                          ),
+                        ]),
                     onTap: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => ScannedMaterialView(
-                      //       containerId: container.id,
-                      //       containerCode: container.code,
-                      //     ),
-                      //   ),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ScannedMaterialView(
+                            containerId: container.id,
+                            containerCode: container.code,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 );
