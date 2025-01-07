@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:scango/services/api_service.dart';
 import 'package:scango/services/database_service.dart';
 
 class ProductionLinesView extends StatefulWidget {
@@ -8,26 +9,37 @@ class ProductionLinesView extends StatefulWidget {
 
 class _ProductionLinesViewState extends State<ProductionLinesView> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode =
+      FocusNode(); // Para mantener el foco en el campo de texto
   final DatabaseService _dbService = DatabaseService();
   List<Map<String, dynamic>> _materials = [];
 
   @override
   void initState() {
     super.initState();
-    _dbService.initializeDatabase();
-    _loadMaterials(); // Cargar datos al iniciar
+    _initializeDatabaseAndLoadMaterials();
   }
 
-  void _loadMaterials() async {
-    final materials =
-        await _dbService.getActiveMaterialExits(); // Ahora sin parámetro
+  Future<void> _initializeDatabaseAndLoadMaterials() async {
+    await _dbService.initializeDatabase();
+    await _loadMaterials();
+  }
+
+  Future<void> _loadMaterials() async {
+    final materials = await _dbService.getActiveMaterialExits();
     setState(() {
       _materials = materials;
     });
   }
 
-  void _processInput(String input) async {
+  Future<void> _processInput(String input) async {
     input = input.trim();
+
+    if (input.isEmpty) {
+      _showNotification('El campo no puede estar vacío.', isError: true);
+      _focusInput();
+      return;
+    }
 
     if (input.length >= 30 && input.length <= 35) {
       String code = input.toUpperCase();
@@ -59,11 +71,17 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
         );
 
         _showNotification('Salida registrada correctamente.');
-        _loadMaterials(); // Recargar datos
+        await _loadMaterials();
       }
     } else if (input.length >= 159) {
       String dataRequest = input.toUpperCase();
       List<String> dataParts = dataRequest.split(',');
+
+      if (dataParts.length < 14) {
+        _showNotification('El código ingresado no es válido.', isError: true);
+        _focusInput(); // Reenfocar el campo de texto
+        return;
+      }
 
       int partQty = int.tryParse(dataParts[10]) ?? 0;
       String supplier = dataParts[11];
@@ -76,7 +94,6 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
         serial: serial,
         partNo: partNo,
         partQty: partQty,
-        noOrder: dataParts[9], // Usar noOrder de la data
       );
 
       if (isRegistered) {
@@ -91,13 +108,14 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
         );
 
         _showNotification('Salida registrada correctamente.');
-        _loadMaterials(); // Recargar datos
+        await _loadMaterials();
       }
     } else {
       _showNotification('El código ingresado no es válido.', isError: true);
     }
 
     _controller.clear();
+    _focusInput(); // Reenfocar el campo de texto
   }
 
   void _showNotification(String message, {bool isError = false}) {
@@ -110,8 +128,8 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
     );
   }
 
-  void _showPushNotification() {
-    _showNotification('Hola');
+  void _focusInput() {
+    FocusScope.of(context).requestFocus(_focusNode);
   }
 
   @override
@@ -124,17 +142,17 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Escanea o ingresa el código QR',
-                ),
-                onSubmitted: _processInput,
+            TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              autofocus: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Escanea o ingresa el código QR',
               ),
+              onSubmitted: _processInput,
             ),
+            const SizedBox(height: 8.0),
             Expanded(
               child: _materials.isEmpty
                   ? const Center(child: Text('No hay registros aún.'))
@@ -153,7 +171,6 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
                                 horizontal: 16.0, vertical: 12.0),
                             title: Column(
                               children: [
-                                // Serial en letras negras y centrado
                                 Text(
                                   '${material['supplier']}${material['serial']}',
                                   style: const TextStyle(
@@ -194,7 +211,38 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
             ),
             const SizedBox(height: 16.0), // Espaciado entre botones
             ElevatedButton(
-              onPressed: _showPushNotification,
+              onPressed: () async {
+                bool allSuccess = true;
+
+                for (final material in _materials) {
+                  final success = await ApiService().sendMaterialExit(
+                    supplier: material['supplier'],
+                    serial: material['serial'],
+                    partNo: material['part_no'],
+                    partQty: material['part_qty'],
+                    containerId: material['container_id'],
+                    noOrder: material['no_order'],
+                  );
+
+                  if (!success) {
+                    allSuccess = false;
+                  } else {
+                    // Actualiza el estado del registro si la API responde correctamente
+                    await _dbService.updateMaterialExitStatus(
+                        material['id'], false);
+                  }
+                }
+
+                if (allSuccess) {
+                  _showNotification(
+                      'Todos los registros se enviaron correctamente.');
+                } else {
+                  _showNotification('Algunos registros no se enviaron.',
+                      isError: true);
+                }
+
+                await _loadMaterials(); // Refrescar la lista de materiales
+              },
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -203,6 +251,7 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
               ),
               child: Text('Cargar Datos'),
             ),
+
             const SizedBox(height: 16.0), // Espaciado entre botones
           ],
         ),

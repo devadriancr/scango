@@ -5,13 +5,13 @@ import 'package:scango/models/container/container.dart';
 class ApiService {
   static const String baseUrl =
       // "http://192.168.130.9:8088/index.php/api/containers";
-      "http://192.168.170.94:8000/api/containers";
+      "http://10.1.50.10:8000/api/containers";
   static const String scanUrl =
       // "http://192.168.130.9:8088/index.php/api/scanned-material";
-      "http://192.168.170.94:8000/api/scanned-material";
+      "http://10.1.50.10:8000/api/scanned-material";
   static const String validateUrl =
       // "http://192.168.130.9:8088/index.php/api/check-material";
-      "http://192.168.170.94:8000/api/check-material";
+      "http://10.1.50.10:8000/api/check-material";
 
   Future<List<ContainerModel>> fetchContainers() async {
     try {
@@ -78,6 +78,40 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error de conexión: $e');
+    }
+  }
+
+  Future<bool> sendMaterialExit({
+    required String supplier,
+    required String serial,
+    required String partNo,
+    required int partQty,
+    int? containerId,
+    String? noOrder,
+  }) async {
+    final url = Uri.parse("http://10.1.50.10:8000/api/material-exit");
+    final headers = {"Content-Type": "application/json"};
+    final body = json.encode({
+      "supplier": supplier,
+      "serial": serial,
+      "part_no": partNo,
+      "part_qty": partQty,
+      "container_id": containerId,
+      "no_order": noOrder,
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Error: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error: $e");
+      return false;
     }
   }
 }

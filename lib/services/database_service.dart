@@ -55,7 +55,7 @@ class DatabaseService {
       );
     } catch (e) {
       print('Error loading material exits: $e');
-      return []; // Devuelve lista vacía en caso de error
+      return [];
     }
   }
 
@@ -82,19 +82,32 @@ class DatabaseService {
     required String serial,
     required String partNo,
     required int partQty,
-    required String noOrder,
+    String? noOrder, // Hacer que noOrder sea opcional
   }) async {
     try {
+      // Construir la cláusula WHERE dinámicamente
+      String whereClause =
+          'supplier = ? AND serial = ? AND part_no = ? AND part_qty = ? AND type = "exit" AND status = 1';
+      List<dynamic> whereArgs = [supplier, serial, partNo, partQty];
+
+      if (noOrder != null) {
+        whereClause += ' AND (no_order = ? OR no_order IS NULL)';
+        whereArgs.add(noOrder);
+      } else {
+        whereClause +=
+            ' AND no_order IS NULL'; // Comparar con NULL si noOrder no se proporciona
+      }
+
       final result = await _database.query(
         'materials',
-        where:
-            'supplier = ? AND serial = ? AND part_no = ? AND part_qty = ? AND no_order = ? AND type = "exit" AND status = 1',
-        whereArgs: [supplier, serial, partNo, partQty, noOrder],
+        where: whereClause,
+        whereArgs: whereArgs,
       );
-      return result.isNotEmpty; // Devuelve true si ya está registrado
+
+      return result.isNotEmpty;
     } catch (e) {
       print('Error checking if material exit is registered: $e');
-      return false; // Devuelve false en caso de error
+      return false;
     }
   }
 
@@ -128,7 +141,6 @@ class DatabaseService {
     String? serial,
     String? partNo,
     required int partQty,
-    int? containerId,
     String? noOrder,
   }) async {
     try {
@@ -138,7 +150,6 @@ class DatabaseService {
         'part_no': partNo,
         'part_qty': partQty,
         'type': 'exit',
-        'container_id': containerId,
         'no_order': noOrder,
       });
     } catch (e) {
@@ -164,6 +175,15 @@ class DatabaseService {
     await _database.update('materials', {'status': 'scanned'},
         where: 'part_no = ? AND container_id = ? AND type = "entry"',
         whereArgs: [partNo, containerId]);
+  }
+
+  Future<void> updateMaterialExitStatus(int id, bool status) async {
+    await _database.update(
+      'material_exits',
+      {'status': status ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // Cerrar la conexión con la base de datos
