@@ -214,7 +214,7 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
               style:
                   const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16.0),
             Expanded(
               child: _records.isEmpty
                   ? const Center(child: Text('No hay registros aún.'))

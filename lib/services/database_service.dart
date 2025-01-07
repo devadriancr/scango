@@ -46,13 +46,11 @@ class DatabaseService {
   }
 
   // Obtener todas las salidas activas por contenedor y tipo
-  Future<List<Map<String, dynamic>>> getActiveMaterialExits(
-      int containerId) async {
+  Future<List<Map<String, dynamic>>> getActiveMaterialExits() async {
     try {
       return await _database.query(
         'materials',
-        where: 'container_id = ? AND type = "exit" AND status = 1',
-        whereArgs: [containerId],
+        where: 'type = "exit" AND status = 1',
         orderBy: 'created_at DESC',
       );
     } catch (e) {
@@ -78,6 +76,28 @@ class DatabaseService {
     }
   }
 
+  // Verificar si un material ya está registrado como salida
+  Future<bool> isMaterialExitRegistered({
+    required String supplier,
+    required String serial,
+    required String partNo,
+    required int partQty,
+    required String noOrder,
+  }) async {
+    try {
+      final result = await _database.query(
+        'materials',
+        where:
+            'supplier = ? AND serial = ? AND part_no = ? AND part_qty = ? AND no_order = ? AND type = "exit" AND status = 1',
+        whereArgs: [supplier, serial, partNo, partQty, noOrder],
+      );
+      return result.isNotEmpty; // Devuelve true si ya está registrado
+    } catch (e) {
+      print('Error checking if material exit is registered: $e');
+      return false; // Devuelve false en caso de error
+    }
+  }
+
   // Agregar una nueva entrada de material
   Future<void> addMaterialEntry({
     String? supplier,
@@ -99,6 +119,30 @@ class DatabaseService {
       });
     } catch (e) {
       print('Error adding material entry: $e');
+    }
+  }
+
+  // Agregar una nueva salida de material
+  Future<void> addMaterialExit({
+    String? supplier,
+    String? serial,
+    String? partNo,
+    required int partQty,
+    int? containerId,
+    String? noOrder,
+  }) async {
+    try {
+      await _database.insert('materials', {
+        'supplier': supplier,
+        'serial': serial,
+        'part_no': partNo,
+        'part_qty': partQty,
+        'type': 'exit',
+        'container_id': containerId,
+        'no_order': noOrder,
+      });
+    } catch (e) {
+      print('Error adding material exit: $e');
     }
   }
 
