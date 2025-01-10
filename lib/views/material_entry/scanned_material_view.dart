@@ -61,9 +61,7 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
       });
       print('Registros cargados: ${_records.length}');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar los registros: $e')),
-      );
+      _showNotification('Error al cargar los registros: $e', isError: true);
     }
   }
 
@@ -78,9 +76,7 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
     );
 
     if (isRegistered) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Este material ya está registrado.')),
-      );
+      _showNotification('Este material ya está registrado.', isError: true);
     } else {
       await _databaseService.addMaterialEntry(
         containerId: widget.containerId,
@@ -90,9 +86,7 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
         serial: serial,
         noOrder: null,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Datos guardados en la base de datos.')),
-      );
+      _showNotification('Datos guardados en la base de datos.');
       _loadRecords();
     }
   }
@@ -119,32 +113,24 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
 
         if (response) {
           await _databaseService.updateStatus(
-            record['part_no'],
+            record['id'],
             widget.containerId,
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error al cargar un escaneo.')),
-          );
+          _showNotification('Error al cargar un escaneo.', isError: true);
           break;
         }
       }
 
       if (recordsToUpload.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Escaneos cargados correctamente.')),
-        );
+        _showNotification('Escaneos cargados correctamente.');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay registros para cargar.')),
-        );
+        _showNotification('No hay registros para cargar.', isError: true);
       }
 
       _loadRecords();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al procesar el escaneo: $e')),
-      );
+      _showNotification('Error al procesar el escaneo: $e', isError: true);
     } finally {
       setState(() {
         _isProcessing = false;
@@ -170,10 +156,19 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
       _inputController.clear();
       _focusNode.requestFocus();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Formato de entrada inválido.')),
-      );
+      _showNotification('Formato de entrada inválido.', isError: true);
     }
+  }
+
+  /// Muestra notificaciones en pantalla
+  void _showNotification(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _clearFields() {
@@ -208,7 +203,7 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
                 hintText: 'Ingrese el código QR aquí...',
               ),
             ),
-            const SizedBox(height: 8.0), // Espaciado entre input y texto
+            const SizedBox(height: 8.0),
             Text(
               'Cantidad escaneada: ${_records.length}',
               style:
@@ -233,7 +228,6 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
                                 horizontal: 16.0, vertical: 12.0),
                             title: Column(
                               children: [
-                                // Serial en letras negras y centrado
                                 Text(
                                   '${record['supplier']}${record['serial']}',
                                   style: const TextStyle(
@@ -241,7 +235,6 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
                                     fontSize: 16.0,
                                     fontWeight: FontWeight.bold,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 8.0),
                               ],
@@ -265,15 +258,13 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
                                 ),
                               ],
                             ),
-                            onTap: () {
-                              // Acción al hacer clic en la card
-                            },
+                            onTap: () {},
                           ),
                         );
                       },
                     ),
             ),
-            const SizedBox(height: 16.0), // Espaciado entre botones
+            const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: _isDataSending ? null : _uploadScanData,
               style: ElevatedButton.styleFrom(
@@ -286,7 +277,7 @@ class _ScannedMaterialViewState extends State<ScannedMaterialView> {
                   ? const CircularProgressIndicator()
                   : const Text('Enviar Datos'),
             ),
-            const SizedBox(height: 16.0), // Espaciado entre botones
+            const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: _isDataSending
                   ? null

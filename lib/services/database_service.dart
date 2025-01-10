@@ -179,7 +179,7 @@ class DatabaseService {
 
   Future<void> updateMaterialExitStatus(int id, bool status) async {
     await _database.update(
-      'material_exits',
+      'materials',
       {'status': status ? 1 : 0},
       where: 'id = ?',
       whereArgs: [id],

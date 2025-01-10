@@ -8,7 +8,17 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Scango'),
+        backgroundColor: Colors.deepPurple, // Color actualizado
+        title: Text(
+          'SCANGO',
+          style: TextStyle(
+            fontWeight: FontWeight.w600, // Semibold
+            fontSize: 20, // Tamaño de la fuente
+            letterSpacing: 1.5, // Espaciado entre letras (para mayúsculas)
+            color: Colors.white, // Letras blancas
+          ),
+        ),
+        centerTitle: true, // Centrar el texto
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

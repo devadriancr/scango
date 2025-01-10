@@ -5,13 +5,15 @@ import 'package:scango/models/container/container.dart';
 class ApiService {
   static const String baseUrl =
       // "http://192.168.130.9:8088/index.php/api/containers";
-      "http://10.1.50.10:8000/api/containers";
+      "http://192.168.170.112:8000/api/containers";
   static const String scanUrl =
       // "http://192.168.130.9:8088/index.php/api/scanned-material";
-      "http://10.1.50.10:8000/api/scanned-material";
+      "http://192.168.170.112:8000/api/scanned-material";
   static const String validateUrl =
       // "http://192.168.130.9:8088/index.php/api/check-material";
-      "http://10.1.50.10:8000/api/check-material";
+      "http://192.168.170.112:8000/api/check-material";
+  static const String scanExirUrl =
+      "http://192.168.170.112:8000/api/material-exit";
 
   Future<List<ContainerModel>> fetchContainers() async {
     try {
@@ -81,15 +83,15 @@ class ApiService {
     }
   }
 
-  Future<bool> sendMaterialExit({
-    required String supplier,
-    required String serial,
-    required String partNo,
-    required int partQty,
+  Future<bool> sendMaterialExit(
+    String supplier,
+    String serial,
+    String partNo,
+    int partQty,
     int? containerId,
     String? noOrder,
-  }) async {
-    final url = Uri.parse("http://10.1.50.10:8000/api/material-exit");
+  ) async {
+    final url = Uri.parse(scanExirUrl);
     final headers = {"Content-Type": "application/json"};
     final body = json.encode({
       "supplier": supplier,
@@ -106,12 +108,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        print("Error: ${response.body}");
         return false;
       }
     } catch (e) {
-      print("Error: $e");
-      return false;
+      throw Exception('Error al conectar con la API: $e');
     }
   }
 }
