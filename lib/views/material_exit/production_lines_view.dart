@@ -12,7 +12,6 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
   final FocusNode _focusNode = FocusNode();
   final DatabaseService _dbService = DatabaseService();
   List<Map<String, dynamic>> _materials = [];
-  bool _isLoading = false; // Indicador para mostrar spinner
   bool _isSending = false; // Bloqueo de múltiples envíos
 
   @override
@@ -155,7 +154,7 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -170,7 +169,6 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
     if (_isSending) return; // Bloquear si ya se está enviando
     setState(() {
       _isSending = true;
-      _isLoading = true;
     });
 
     try {
@@ -188,9 +186,17 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
         if (success) {
           await _dbService.updateMaterialExitStatus(record['id'], false);
         } else {
+          await _dbService.updateMaterialExitStatus(record['id'], false);
           _showNotification('Error al cargar un escaneo.', isError: true);
-          break;
+          // break;
         }
+      }
+
+      try {
+        String message = await ApiService().storedInInforExit();
+        _showNotification(message, isError: false);
+      } catch (e) {
+        _showNotification("Error: $e", isError: false);
       }
 
       await _loadMaterials();
@@ -199,7 +205,6 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
     } finally {
       setState(() {
         _isSending = false;
-        _isLoading = false;
       });
     }
   }
@@ -225,6 +230,12 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
                     labelText: 'Escanea o ingresa el código QR',
                   ),
                   onSubmitted: _processInput,
+                ),
+                const SizedBox(height: 8.0),
+                Text(
+                  'Cantidad escaneada: ${_materials.length}',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.normal),
                 ),
                 const SizedBox(height: 8.0),
                 Expanded(
@@ -278,10 +289,6 @@ class _ProductionLinesViewState extends State<ProductionLinesView> {
               ],
             ),
           ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
         ],
       ),
     );

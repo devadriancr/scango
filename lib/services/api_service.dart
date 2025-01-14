@@ -12,8 +12,27 @@ class ApiService {
   static const String validateUrl =
       // "http://192.168.130.9:8088/index.php/api/check-material";
       "http://192.168.170.112:8000/api/check-material";
-  static const String scanExirUrl =
+  static const String scanExitUrl =
       "http://192.168.170.112:8000/api/material-exit";
+
+  static const String storedInInforExitUrl =
+      "http://192.168.170.112:8000/api/finish-material-exit";
+
+  Future<String> storedInInforExit() async {
+    try {
+      final response = await http.get(Uri.parse(storedInInforExitUrl));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        return data['message'];
+      } else {
+        throw Exception('Error al obtener los datos: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
+    }
+  }
 
   Future<List<ContainerModel>> fetchContainers() async {
     try {
@@ -91,7 +110,7 @@ class ApiService {
     int? containerId,
     String? noOrder,
   ) async {
-    final url = Uri.parse(scanExirUrl);
+    final url = Uri.parse(scanExitUrl);
     final headers = {"Content-Type": "application/json"};
     final body = json.encode({
       "supplier": supplier,
